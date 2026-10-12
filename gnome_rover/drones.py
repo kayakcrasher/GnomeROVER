@@ -2,12 +2,19 @@
 import math, random
 from .comms import Bus
 from .world import World
+from .power import (
+    PowerMode, next_mode, drain_for, can_move, describe,
+    LOW_THRESHOLD, CRITICAL_THRESHOLD, CHARGE_EXIT,
+)
 
 
 class Drone:
     def __init__(self, name, bus, world, role="generic"):
         self.name = name; self.bus = bus; self.world = world
-        self.role = role; self.status = "stowed"; self.battery = 100.0
+        self.role = role
+        self.status = "stowed"
+        self.battery = 100.0
+        self.mode = PowerMode.NORMAL
         world.add_unit(name, role=role)
 
     def deploy(self, x, y):
@@ -15,31 +22,70 @@ class Drone:
         self.world.move_unit(self.name, x, y)
         self.world.units[self.name].status = "deployed"
         self.bus.send(self.name, "base", "deployed", x=x, y=y)
-        print(f"[{self.name}] deployed at ({x}, {y})")
+        print(f"[{self.name}] deployed at ({x}, {y}) {describe(self.mode)}")
 
     def recall(self):
         self.status = "returning"
         self.world.units[self.name].status = "returning"
         print(f"[{self.name}] returning")
 
-    def tick(self, dt, bx, by):
+    def _update_power(self, dt, bx, by):
+        """Run the power state machine one step."""
         u = self.world.units[self.name]
-        u.status = self.status
+
+        # if HALTED and not at base, request a dock (crawl back)
+        if self.mode == PowerMode.HALTED and self.status == "deployed":
+            self.status = "returning"
+
+        # docked once we're basically on top of base
+        dist_to_base = math.hypot(u.x - bx, u.y - by)
+        at_base = dist_to_base < 0.6
+
+        docked = at_base and self.status in ("stowed", "returning")
+
+        new_mode = next_mode(self.mode, self.battery, docked)
+
+        # if at base and battery below exit threshold, force CHARGING
+        if at_base and self.status != "deployed" and self.battery < CHARGE_EXIT:
+            new_mode = PowerMode.CHARGING
+
+        if new_mode != self.mode:
+            print(f"[{self.name}] {describe(self.mode)} -> {describe(new_mode)} "
+                  f"(bat={self.battery:.1f}%)")
+            self.mode = new_mode
+
+        # apply drain/charge
+        delta = drain_for(self.mode) * dt * 10   # dt is in tick seconds; scale by 10 to match original
+        self.battery = max(0.0, min(100.0, self.battery - delta))
+
+        # if we've hit HALTED and are back at base, dock+charge
+        if at_base and self.status == "returning":
+            self.status = "stowed"
+            u.status = "stowed"
+
         u.battery = self.battery
-        if self.status == "stowed": return
-        if self.status == "deployed":
-            self.battery -= dt * 0.1
-            u.battery = self.battery
-            if self.battery <= 0:
-                self.status = "dead"
-                u.status = "dead"
-                print(f"[{self.name}] dead")
+        u.status = self.status
+
+    def tick(self, dt, bx, by):
+        self._update_power(dt, bx, by)
+
+        if self.status == "stowed":
+            return
+        if self.status == "returning":
+            u = self.world.units[self.name]
+            dx, dy = bx - u.x, by - u.y
+            d = math.hypot(dx, dy) or 1.0
+            step = min(0.8, d) * (0.3 if self.mode == PowerMode.CONSERVE else 1.0)
+            u.x += dx / d * step
+            u.y += dy / d * step
+            return
 
     def report(self):
         u = self.world.units[self.name]
         return {"name": self.name, "role": self.role,
                 "x": round(u.x,2), "y": round(u.y,2),
-                "battery": round(self.battery,1), "status": self.status}
+                "battery": round(self.battery,1), "status": self.status,
+                "mode": self.mode.value}
 
 
 class ScoutDrone(Drone):
@@ -48,8 +94,8 @@ class ScoutDrone(Drone):
         self.findings = []
 
     def tick(self, dt, bx, by):
-        super().tick(dt, bx, by)
-        if self.status == "deployed":
+        self._update_power(dt, bx, by)
+        if self.status == "deployed" and can_move(self.mode):
             u = self.world.units[self.name]
             u.x += random.uniform(-0.5, 0.5)
             u.y += random.uniform(-0.5, 0.5)
@@ -59,6 +105,8 @@ class ScoutDrone(Drone):
                 self.world.add_landmark(f"{k}-{len(self.findings)}", u.x, u.y, k)
                 self.bus.send(self.name, "base", "finding", what=k,
                               x=round(u.x,1), y=round(u.y,1))
+        elif self.status == "returning":
+            Drone.tick(self, dt, bx, by)
 
     def report(self):
         r = super().report(); r["findings"] = len(self.findings); return r
@@ -75,6 +123,9 @@ class SamplerDrone(Drone):
         self.samples = []
 
     def sample_at(self, x, y):
+        if not can_move(self.mode):
+            print(f"[{self.name}] cannot sample: {describe(self.mode)}")
+            return
         self.status = "deployed"
         self.world.move_unit(self.name, x, y)
         self.samples.append((x,y))
@@ -83,18 +134,7 @@ class SamplerDrone(Drone):
         self.status = "returning"
 
     def tick(self, dt, bx, by):
-        super().tick(dt, bx, by)
-        if self.status == "returning":
-            u = self.world.units[self.name]
-            dx, dy = bx-u.x, by-u.y
-            d = math.hypot(dx,dy)
-            if d < 0.5:
-                self.status = "stowed"
-                self.world.move_unit(self.name, bx, by)
-                print(f"[{self.name}] docked")
-            else:
-                s = min(1.0, d)
-                u.x += dx/d*s; u.y += dy/d*s
+        Drone.tick(self, dt, bx, by)
 
 
 class ColonySeed(Drone):
@@ -102,10 +142,9 @@ class ColonySeed(Drone):
     def __init__(self, name, bus, world):
         super().__init__(name, bus, world, role="colony")
         self.stage = 0
-        self.chosen_site = None    # SiteScore, once placed
+        self.chosen_site = None
 
     def place_auto(self, selector, search_radius=15.0):
-        """Pick the best-scoring site and deploy there."""
         site = selector.best_site(search_radius=search_radius)
         if site is None:
             print(f"[{self.name}] no viable site found")
@@ -121,10 +160,9 @@ class ColonySeed(Drone):
         return True
 
     def tick(self, dt, bx, by):
-        super().tick(dt, bx, by)
-        if self.status == "deployed":
-            self.battery -= dt * 0.05
-            self.stage = min(int(self.battery // 20), len(self.STAGES)-1)
+        self._update_power(dt, bx, by)
+        if self.status == "deployed" and can_move(self.mode):
+            self.stage = min(int(self.battery // 20), len(self.STAGES) - 1)
 
     def report(self):
         r = super().report()
