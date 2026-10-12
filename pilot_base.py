@@ -1,5 +1,6 @@
 """Base-station pilot commands."""
 from gnome_rover.base import BaseStation
+from gnome_rover.sites import SiteSelector
 
 
 def attach(rover):
@@ -8,10 +9,43 @@ def attach(rover):
 
 def cmd_deploy(base, args):
     if not args:
-        print("usage: deploy <scout|relay|sampler|colony> [x y]"); return
+        print("usage: deploy <scout|relay|sampler|colony> [x y | auto]"); return
+    role = args[0].lower()
+
+    # auto site selection for colony
+    if role in ("colony", "seed") and len(args) > 1 and args[1].lower() == "auto":
+        colony = base._find("colony")
+        if not colony:
+            print("no colony seed in bays"); return
+        selector = SiteSelector(base.world)
+        print(f"[BASE] running site search...")
+        ok = colony.place_auto(selector, search_radius=15.0)
+        if ok:
+            base.log(f"deployed {colony.name} to best site")
+        return
+
     x = float(args[1]) if len(args) > 1 else 5.0
     y = float(args[2]) if len(args) > 2 else 5.0
-    base.deploy(args[0], x, y)
+    base.deploy(role, x, y)
+
+
+def cmd_site(base, args):
+    """site <x> <y>   — score a specific coordinate."""
+    if len(args) != 2:
+        print("usage: site <x> <y>"); return
+    from gnome_rover.sites import SiteSelector
+    SiteSelector(base.world).explain(float(args[0]), float(args[1]))
+
+
+def cmd_find_site(base, args):
+    """find-site [radius]   — grid search, print the winner."""
+    radius = float(args[0]) if args else 15.0
+    from gnome_rover.sites import SiteSelector
+    best = SiteSelector(base.world).best_site(search_radius=radius)
+    if not best:
+        print("no site found"); return
+    print(f"BEST: ({best.x}, {best.y}) score={best.total} ok={best.ok()}")
+    for r in best.reasons: print(f"  - {r}")
 
 
 def cmd_recall(base, args):
