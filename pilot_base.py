@@ -101,3 +101,13 @@ def cmd_route(base, args):
         base.roads.pretty_route(path, cost)
     else:
         print(f"[ROUTE] no path from ({x1},{y1}) to ({x2},{y2}) — need roads or points within 3m")
+
+
+def cmd_go(base, args):
+    """go <unit> <x> <y>   -- plan a route via roads and start walking."""
+    if len(args) != 3:
+        print("usage: go <unit> <x> <y>"); return
+    d = base._find(args[0]) or base.drones.get(args[0])
+    if not d:
+        print(f"no such unit: {args[0]}"); return
+    d.go_to(float(args[1]), float(args[2]), roads=base.roads)

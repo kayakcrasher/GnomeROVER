@@ -33,6 +33,7 @@ site <x> <y>              score a colony site
 find-site [radius]        grid-search best site
 road <new|add|list|show>  define/inspect roads
 route <x1> <y1> <x2> <y2> plan a route (or 'route <unitA> <unitB>')
+go <unit> <x> <y>         plan route + walk it
 help                      this list
 quit / exit               shut down
 """
@@ -91,6 +92,7 @@ def main():
             elif cmd == "find-site": pilot_base.cmd_find_site(base, args)
             elif cmd == "road":     pilot_base.cmd_road(base, args)
             elif cmd == "route":    pilot_base.cmd_route(base, args)
+            elif cmd == "go":       pilot_base.cmd_go(base, args)
             elif cmd == "recall":  pilot_base.cmd_recall(base, args)
             elif cmd == "map":     pilot_base.cmd_map(base, args)
             elif cmd == "ping":    pilot_base.cmd_ping(base, args)

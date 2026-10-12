@@ -15,6 +15,8 @@ class Drone:
         self.status = "stowed"
         self.battery = 100.0
         self.mode = PowerMode.NORMAL
+        self.route = []          # list of (x, y) waypoints
+        self.route_idx = 0       # next waypoint to head toward
         world.add_unit(name, role=role)
 
     def deploy(self, x, y):
@@ -28,6 +30,45 @@ class Drone:
         self.status = "returning"
         self.world.units[self.name].status = "returning"
         print(f"[{self.name}] returning")
+
+    def go_to(self, x, y, roads=None):
+        """Plan a route (via roads if given) and start walking it."""
+        u = self.world.units[self.name]
+        if roads is not None:
+            path, cost = roads.route((u.x, u.y), (x, y))
+        else:
+            path, cost = [(u.x, u.y), (x, y)], math.hypot(x - u.x, y - u.y)
+        if not path:
+            print(f"[{self.name}] no route to ({x}, {y})")
+            return False
+        self.route = path
+        self.route_idx = 1      # first waypoint is current position
+        self.status = "deployed"
+        u.status = "deployed"
+        print(f"[{self.name}] route planned: {len(path)} waypoints, cost={cost:.2f}m")
+        return True
+
+    def _walk_route(self, dt):
+        """Advance one step along self.route, return True when complete."""
+        if not self.route or self.route_idx >= len(self.route):
+            return True
+        u = self.world.units[self.name]
+        tx, ty = self.route[self.route_idx]
+        dx, dy = tx - u.x, ty - u.y
+        d = math.hypot(dx, dy)
+        if d < 0.3:
+            self.route_idx += 1
+            if self.route_idx >= len(self.route):
+                print(f"[{self.name}] arrived at ({u.x:.2f}, {u.y:.2f})")
+                self.route = []
+                return True
+            return False
+        # speed gated by power mode
+        speed = 0.5 if self.mode == PowerMode.NORMAL else 0.15
+        step = min(speed, d)
+        u.x += dx / d * step
+        u.y += dy / d * step
+        return False
 
     def _update_power(self, dt, bx, by):
         """Run the power state machine one step."""
@@ -70,6 +111,11 @@ class Drone:
         self._update_power(dt, bx, by)
 
         if self.status == "stowed":
+            return
+        if self.route and self.status == "deployed":
+            if not can_move(self.mode):
+                return   # frozen by battery policy
+            self._walk_route(dt)
             return
         if self.status == "returning":
             u = self.world.units[self.name]
