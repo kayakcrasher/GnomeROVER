@@ -1,12 +1,20 @@
-"""2-link planar IK per leg + forward kinematics.
+"""2-link planar IK + FK for a single leg.
 
-Convention:
-  Frame is local to the shoulder. +x = forward (leg's own "out" direction),
-  +y = left, +z = up.
-  All returned angles are in degrees.
-  hip_yaw   : rotation about Z, 0 = pointing forward
-  shoulder  : rotation about Y, positive = leg raised (foot above shoulder line)
-  knee      : bend angle, positive = knee flexed (foot pulled in)
+Convention (must stay consistent between ik_leg and fk_leg):
+
+  Leg-local frame:
+    +x = forward (leg's outward direction)
+    +y = left
+    +z = up
+    Origin is at the shoulder joint.
+
+  Angles in degrees:
+    hip_yaw  : rotation about Z. 0 deg = leg plane aligned with +x.
+    shoulder : angle of the UPPER leg measured from the horizontal
+               (the +r axis). Positive = knee rises above the shoulder line.
+    knee     : INTERIOR angle at the knee. 180 deg = straight leg, 0 deg = folded.
+
+  Knee bends forward (toward +r direction).
 """
 import math
 
@@ -14,56 +22,60 @@ import math
 L1 = 8.0   # shoulder -> knee
 L2 = 8.0   # knee -> foot
 
+EPS = 1e-6
+
 
 def ik_leg(x, y, z):
     """Solve (hip_yaw, shoulder, knee) so foot lands at (x,y,z).
 
     Returns degrees, or None if unreachable.
     """
-    # hip yaw: aim the leg plane toward the foot
     hip_yaw = math.degrees(math.atan2(y, x))
-
-    # reach in the leg's own plane
     r = math.hypot(x, y)
     d = math.hypot(r, z)
 
-    if d > (L1 + L2) * 0.999:
+    if d > (L1 + L2) - EPS:
         return None
-    if d < abs(L1 - L2) * 1.001:
+    if d < abs(L1 - L2) + EPS:
         return None
 
-    # interior angle at the knee (between the two links)
-    cos_knee_int = (L1*L1 + L2*L2 - d*d) / (2 * L1 * L2)
-    cos_knee_int = max(-1.0, min(1.0, cos_knee_int))
-    knee_int = math.acos(cos_knee_int)
-    knee_bend = math.degrees(math.pi - knee_int)   # 0 = straight
+    # Interior angle at the knee (law of cosines)
+    cos_k = (L1*L1 + L2*L2 - d*d) / (2 * L1 * L2)
+    cos_k = max(-1.0, min(1.0, cos_k))
+    knee = math.degrees(math.acos(cos_k))     # interior
 
-    # shoulder: angle of the upper leg from the +r axis (in r-z plane)
-    # interior angle at the shoulder between upper leg and the r-axis
-    cos_shoulder = (L1*L1 + d*d - L2*L2) / (2 * L1 * d)
-    cos_shoulder = max(-1.0, min(1.0, cos_shoulder))
-    alpha = math.acos(cos_shoulder)                # radians
-    angle_to_foot = math.atan2(z, r)               # from +r axis
-    shoulder = math.degrees(angle_to_foot + alpha)
+    # Shoulder: angle from +r axis to the upper leg
+    # Law of cosines on the triangle (shoulder, knee, foot):
+    #   angle at shoulder between upper leg and the line to the foot
+    cos_a = (L1*L1 + d*d - L2*L2) / (2 * L1 * d)
+    cos_a = max(-1.0, min(1.0, cos_a))
+    a = math.acos(cos_a)
 
-    return (hip_yaw, shoulder, knee_bend)
+    angle_to_foot = math.atan2(z, r)
+    shoulder = math.degrees(angle_to_foot + a)   # knee "above" the line
+
+    return (hip_yaw, shoulder, knee)
 
 
 def fk_leg(hip_yaw, shoulder, knee):
-    """Forward kinematics: return foot (x,y,z) from joint angles (deg)."""
+    """Forward kinematics: return foot (x,y,z) given joint angles in degrees.
+
+    Matches ik_leg's convention exactly.
+    """
     hy = math.radians(hip_yaw)
     sh = math.radians(shoulder)
-    kn = math.radians(knee)
+    kn = math.radians(knee)          # interior angle
 
-    # interior angle at knee (fk takes the *bend* angle)
-    knee_int = math.pi - kn
-
-    # upper leg: from shoulder, at angle sh from the +r axis
+    # Upper leg: at angle `sh` from +r axis
     r1 = L1 * math.cos(sh)
     z1 = L1 * math.sin(sh)
 
-    # lower leg: rotated by -knee_int from upper leg direction
-    lower_dir = sh - knee_int
+    # Lower leg: upper leg direction, rotated by (pi - knee_interior)
+    # because the leg folds by the exterior angle.
+    # Exterior angle at knee = pi - interior.
+    exterior = math.pi - kn
+    lower_dir = sh - exterior       # fold DOWN/FORWARD from upper leg
+
     r2 = L2 * math.cos(lower_dir)
     z2 = L2 * math.sin(lower_dir)
 
