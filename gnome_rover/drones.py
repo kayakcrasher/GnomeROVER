@@ -13,19 +13,26 @@ class Drone:
     def deploy(self, x, y):
         self.status = "deployed"
         self.world.move_unit(self.name, x, y)
+        self.world.units[self.name].status = "deployed"
         self.bus.send(self.name, "base", "deployed", x=x, y=y)
         print(f"[{self.name}] deployed at ({x}, {y})")
 
     def recall(self):
         self.status = "returning"
+        self.world.units[self.name].status = "returning"
         print(f"[{self.name}] returning")
 
     def tick(self, dt, bx, by):
+        u = self.world.units[self.name]
+        u.status = self.status
+        u.battery = self.battery
         if self.status == "stowed": return
         if self.status == "deployed":
             self.battery -= dt * 0.1
+            u.battery = self.battery
             if self.battery <= 0:
                 self.status = "dead"
+                u.status = "dead"
                 print(f"[{self.name}] dead")
 
     def report(self):
