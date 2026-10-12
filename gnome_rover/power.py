@@ -14,6 +14,7 @@ class PowerMode(Enum):
 LOW_THRESHOLD      = 25.0
 CRITICAL_THRESHOLD = 10.0
 CHARGE_EXIT        = 90.0
+CHARGE_HYSTERESIS  = 85.0  # don't re-enter charging until below this
 
 # drain rates (percent / second at 10Hz tick, i.e. per 0.1s dt in tick())
 DRAIN_NORMAL   = 0.10
@@ -24,9 +25,15 @@ CHARGE_RATE    = 0.15   # solar, faster than drain
 
 def next_mode(current: PowerMode, battery: float, docked: bool) -> PowerMode:
     """Pure function: given state, what should the mode be now?"""
-    # charging has its own exit
+    # charging has its own exit (with hysteresis)
     if current == PowerMode.CHARGING:
-        return PowerMode.NORMAL if battery >= CHARGE_EXIT else PowerMode.CHARGING
+        if battery >= CHARGE_EXIT:
+            return PowerMode.NORMAL
+        return PowerMode.CHARGING
+
+    # if we're NORMAL but battery drops below hysteresis floor, go back to charging
+    if current == PowerMode.NORMAL and battery < CHARGE_HYSTERESIS and docked:
+        return PowerMode.CHARGING
 
     # docking is a request, honored until charged
     if current == PowerMode.DOCKED:
