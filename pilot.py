@@ -31,6 +31,8 @@ log                       mission log
 uplink <msg>              queue a message to Earth
 site <x> <y>              score a colony site
 find-site [radius]        grid-search best site
+road <new|add|list|show>  define/inspect roads
+route <x1> <y1> <x2> <y2> plan a route (or 'route <unitA> <unitB>')
 help                      this list
 quit / exit               shut down
 """
@@ -87,6 +89,8 @@ def main():
             elif cmd == "deploy":  pilot_base.cmd_deploy(base, args)
             elif cmd == "site":     pilot_base.cmd_site(base, args)
             elif cmd == "find-site": pilot_base.cmd_find_site(base, args)
+            elif cmd == "road":     pilot_base.cmd_road(base, args)
+            elif cmd == "route":    pilot_base.cmd_route(base, args)
             elif cmd == "recall":  pilot_base.cmd_recall(base, args)
             elif cmd == "map":     pilot_base.cmd_map(base, args)
             elif cmd == "ping":    pilot_base.cmd_ping(base, args)

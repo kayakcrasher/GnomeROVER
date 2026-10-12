@@ -2,6 +2,7 @@
 from .comms import Bus
 from .world import World
 from .drones import ScoutDrone, RelayDrone, SamplerDrone, ColonySeed
+from .roads import RoadNetwork
 
 
 class BaseStation:
@@ -9,6 +10,7 @@ class BaseStation:
         self.rover = rover
         self.bus = Bus()
         self.world = World()
+        self.roads = RoadNetwork()
         self.world.add_unit("rover", role="base")
         self.drones = {}
         self.uplink_queue = []

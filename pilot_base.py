@@ -59,3 +59,45 @@ def cmd_ping(base, args):      base.ping()
 def cmd_report(base, args):    base.status_report()
 def cmd_log(base, args):       base.log_dump()
 def cmd_uplink(base, args):    base.uplink(" ".join(args)) if args else print("usage: uplink <msg>")
+
+
+def cmd_road(base, args):
+    """road <new|add|list|show> [name] [x] [y]"""
+    if not args:
+        print("usage: road <new|add|list|show> ...")
+        return
+    sub = args[0].lower()
+    if sub == "new" and len(args) >= 2:
+        base.roads.new(args[1])
+    elif sub == "add" and len(args) >= 4:
+        base.roads.add(args[1], float(args[2]), float(args[3]))
+    elif sub == "list":
+        base.roads.list_all()
+    elif sub == "show" and len(args) >= 2:
+        base.roads.show(args[1])
+    else:
+        print("usage: road new <name> | road add <name> <x> <y> | road list | road show <name>")
+
+
+def cmd_route(base, args):
+    """route <x1> <y1> <x2> <y2>   OR   route <unit_a> <unit_b>"""
+    if len(args) == 4:
+        try:
+            x1, y1, x2, y2 = map(float, args)
+        except ValueError:
+            print("usage: route <x1> <y1> <x2> <y2>"); return
+    elif len(args) == 2:
+        a = base.world.units.get(args[0])
+        b = base.world.units.get(args[1])
+        if not a or not b:
+            print(f"unknown unit(s): {args}"); return
+        x1, y1, x2, y2 = a.x, a.y, b.x, b.y
+    else:
+        print("usage: route <x1> <y1> <x2> <y2>  OR  route <unit> <unit>")
+        return
+
+    path, cost = base.roads.route((x1, y1), (x2, y2))
+    if path:
+        base.roads.pretty_route(path, cost)
+    else:
+        print(f"[ROUTE] no path from ({x1},{y1}) to ({x2},{y2}) — need roads or points within 3m")
