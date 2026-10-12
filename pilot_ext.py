@@ -97,3 +97,40 @@ def _read_field(rover, field):
         j = jmap.get(joint_key)
         return round(j.angle, 1) if j else None
     return None
+
+
+
+def cmd_foot(rover, args):
+    """foot <LEG|all> <x> <y> <z>  -- IK move foot in local frame."""
+    if len(args) != 4:
+        print("usage: foot <FL|FR|BL|BR|all> <x> <y> <z>")
+        return
+    which, x, y, z = args[0], float(args[1]), float(args[2]), float(args[3])
+    if which.lower() == "all":
+        for leg in rover.legs.values():
+            ok = leg.move_foot(x, y, z)
+        print(f"[FOOT] all -> ({x},{y},{z})")
+        return
+    try:
+        pos = LegPosition(which.upper())
+    except ValueError:
+        print(f"unknown leg: {which}")
+        return
+    leg = rover.legs[pos]
+    ok = leg.move_foot(x, y, z)
+    if ok:
+        print(f"[FOOT] {pos.value} -> ({x},{y},{z})")
+    else:
+        print(f"[FOOT] {pos.value} -> ({x},{y},{z})  UNREACHABLE, ignored")
+
+
+def cmd_fkin(rover, args):
+    """fkin <LEG|all>  -- print current foot position from joint angles."""
+    if len(args) != 1:
+        print("usage: fkin <FL|FR|BL|BR|all>")
+        return
+    which = args[0]
+    targets = rover.legs.values() if which.lower() == "all" else [rover.legs[LegPosition(which.upper())]]
+    for leg in targets:
+        x, y, z = leg.foot()
+        print(f"  {leg.position.value}: x={x:>6.2f} y={y:>6.2f} z={z:>6.2f}")

@@ -19,6 +19,8 @@ pose <leg|all> <h> <s> <k> set raw joint angles
 ramp <LEG>_<joint> <deg>  sweep one joint slowly
 watch <field>             stream a value (Ctrl-C stops)
 home                      alias for stand
+foot <leg|all> <x> <y> <z> IK: send foot to local position
+fkin <leg|all>            print current foot position
 help                      this list
 quit / exit               shut down
 """
@@ -61,6 +63,8 @@ def main():
             elif cmd == "pose":    pilot_ext.cmd_pose(rover, args)
             elif cmd == "ramp":    pilot_ext.cmd_ramp(rover, args)
             elif cmd == "watch":   pilot_ext.cmd_watch(rover, args)
+            elif cmd == "foot":    pilot_ext.cmd_foot(rover, args)
+            elif cmd == "fkin":    pilot_ext.cmd_fkin(rover, args)
             elif cmd == "plug":
                 if not args:
                     print("usage: plug <camera|sensor|arm>")

@@ -57,3 +57,23 @@ class Leg:
 
     def update(self, dt: float) -> bool:
         return all(j.update(dt) for j in self.all_joints())
+
+
+    # ---- inverse kinematics ----
+    def move_foot(self, x, y, z):
+        """Command foot to (x,y,z) in the leg's local frame."""
+        from .kinematics import ik_leg
+        sol = ik_leg(x, y, z)
+        if sol is None:
+            return False
+        hy, sh, kn = sol
+        self.hip.set_target(hy)
+        self.shoulder.set_target(sh)
+        self.knee.set_target(kn)
+        self.foot_x, self.foot_y, self.foot_z = x, y, z
+        return True
+
+    def foot(self):
+        """Current foot position from forward kinematics."""
+        from .kinematics import fk_leg
+        return fk_leg(self.hip.angle, self.shoulder.angle, self.knee.angle)
