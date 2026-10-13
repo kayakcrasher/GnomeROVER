@@ -29,6 +29,9 @@ ping                      radio check
 report                    full mission status
 log                       mission log
 uplink <msg>              queue a message to Earth
+infra [list|deploy]       show/deploy infrastructure
+weather                   latest weather reading
+quiet [on|off]            silence background chatter
 site <x> <y>              score a colony site
 find-site [radius]        grid-search best site
 road <new|add|list|show>  define/inspect roads
@@ -99,6 +102,9 @@ def main():
             elif cmd == "report":  pilot_base.cmd_report(base, args)
             elif cmd == "log":     pilot_base.cmd_log(base, args)
             elif cmd == "uplink":  pilot_base.cmd_uplink(base, args)
+            elif cmd == "infra":    pilot_base.cmd_infra(base, args)
+            elif cmd == "weather":  pilot_base.cmd_weather(base, args)
+            elif cmd == "quiet":    pilot_base.cmd_quiet(base, args)
             elif cmd == "plug":
                 if not args: print("usage: plug <camera|sensor|arm>")
                 else: rover.plug_in(make_module(args[0]))

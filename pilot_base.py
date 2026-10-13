@@ -111,3 +111,64 @@ def cmd_go(base, args):
     if not d:
         print(f"no such unit: {args[0]}"); return
     d.go_to(float(args[1]), float(args[2]), roads=base.roads)
+
+
+def cmd_infra(base, args):
+    """infra                       -- list infra
+       infra deploy home <x> <y>   -- place HomeBase
+       infra deploy weather <x> <y>
+       infra deploy repeater <x> <y>
+       infra deploy depot <x> <y>"""
+    if not args or args[0] == "list":
+        base.infra.pretty()
+        return
+    if args[0] == "deploy" and len(args) >= 4:
+        kind = args[1].lower()
+        x, y = float(args[2]), float(args[3])
+        if kind == "home":
+            base.infra.add(HomeBase("HomeBase", x, y))
+            base.world.add_landmark("HomeBase", x, y, "home")
+        elif kind == "weather":
+            n = f"Weather-{len(base.infra.of_kind('weather'))+1}"
+            base.infra.add(WeatherStation(n, x, y))
+            base.world.add_landmark(n, x, y, "weather")
+        elif kind == "repeater":
+            n = f"Repeater-{len(base.infra.of_kind('repeater'))+1}"
+            base.infra.add(RadioRepeater(n, x, y))
+            base.world.add_landmark(n, x, y, "repeater")
+        elif kind == "depot":
+            n = f"Depot-{len(base.infra.of_kind('depot'))+1}"
+            base.infra.add(Depot(n, x, y))
+            base.world.add_landmark(n, x, y, "depot")
+        else:
+            print(f"unknown kind: {kind}")
+        return
+    print("usage: infra [list | deploy <home|weather|repeater|depot> <x> <y>]")
+
+
+def cmd_weather(base, args):
+    ws = base.infra.weather()
+    if not ws:
+        print("[WEATHER] no weather station deployed")
+        return
+    r = ws.latest()
+    if not r:
+        print("[WEATHER] no readings yet")
+        return
+    print(f"[WEATHER {ws.name} @ ({ws.x},{ws.y})]")
+    print(f"  wind: {r['wind_ms']} m/s")
+    print(f"  temp: {r['temp_c']} C")
+    print(f"  pressure: {r['pressure_pa']} Pa")
+    print(f"  rad: {r['rad_usv']} uSv/h")
+    if ws.storm_warning():
+        print("  ** STORM WARNING **")
+
+
+def cmd_quiet(base, args):
+    from gnome_rover.quiet import set_quiet, is_quiet
+    if not args:
+        print(f"quiet is {'ON' if is_quiet() else 'OFF'}")
+        return
+    on = args[0].lower() in ("on", "true", "1", "yes")
+    set_quiet(on)
+    print(f"quiet -> {'ON' if on else 'OFF'}")

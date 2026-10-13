@@ -3,6 +3,7 @@ from .comms import Bus
 from .world import World
 from .drones import ScoutDrone, RelayDrone, SamplerDrone, ColonySeed
 from .roads import RoadNetwork
+from .infra import InfraManager, HomeBase, WeatherStation, RadioRepeater, Depot
 
 
 class BaseStation:
@@ -11,6 +12,7 @@ class BaseStation:
         self.bus = Bus()
         self.world = World()
         self.roads = RoadNetwork()
+        self.infra = InfraManager()
         self.world.add_unit("rover", role="base")
         self.drones = {}
         self.uplink_queue = []
@@ -48,6 +50,7 @@ class BaseStation:
         rx, ry = self.world.units["rover"].x, self.world.units["rover"].y
         for d in self.drones.values():
             d.tick(dt, rx, ry)
+        self.infra.tick(dt)
         for p in self.bus.poll("base"):
             self.mission_log.append(f"  << {p.src} -> {p.kind} {p.payload}")
 
@@ -57,6 +60,8 @@ class BaseStation:
         print("=== DRONES ===")
         for d in self.drones.values():
             print(f"  {d.report()}")
+        print("=== INFRA ===")
+        self.infra.pretty()
 
     def ping(self):
         print("[PING] radio check:")

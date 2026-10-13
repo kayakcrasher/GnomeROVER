@@ -2,6 +2,7 @@
 import math, random
 from .comms import Bus
 from .world import World
+from .quiet import say
 from .power import (
     PowerMode, next_mode, drain_for, can_move, describe,
     LOW_THRESHOLD, CRITICAL_THRESHOLD, CHARGE_EXIT,
@@ -24,12 +25,12 @@ class Drone:
         self.world.move_unit(self.name, x, y)
         self.world.units[self.name].status = "deployed"
         self.bus.send(self.name, "base", "deployed", x=x, y=y)
-        print(f"[{self.name}] deployed at ({x}, {y}) {describe(self.mode)}")
+        say(f"[{self.name}] deployed at ({x}, {y}) {describe(self.mode)}")
 
     def recall(self):
         self.status = "returning"
         self.world.units[self.name].status = "returning"
-        print(f"[{self.name}] returning")
+        say(f"[{self.name}] returning")
 
     def go_to(self, x, y, roads=None):
         """Plan a route (via roads if given) and start walking it."""
@@ -39,13 +40,13 @@ class Drone:
         else:
             path, cost = [(u.x, u.y), (x, y)], math.hypot(x - u.x, y - u.y)
         if not path:
-            print(f"[{self.name}] no route to ({x}, {y})")
+            say(f"[{self.name}] no route to ({x}, {y})")
             return False
         self.route = path
         self.route_idx = 1      # first waypoint is current position
         self.status = "deployed"
         u.status = "deployed"
-        print(f"[{self.name}] route planned: {len(path)} waypoints, cost={cost:.2f}m")
+        say(f"[{self.name}] route planned: {len(path)} waypoints, cost={cost:.2f}m")
         return True
 
     def _walk_route(self, dt):
@@ -59,7 +60,7 @@ class Drone:
         if d < 0.3:
             self.route_idx += 1
             if self.route_idx >= len(self.route):
-                print(f"[{self.name}] arrived at ({u.x:.2f}, {u.y:.2f})")
+                say(f"[{self.name}] arrived at ({u.x:.2f}, {u.y:.2f})")
                 self.route = []
                 return True
             return False
@@ -91,8 +92,8 @@ class Drone:
             new_mode = PowerMode.CHARGING
 
         if new_mode != self.mode:
-            print(f"[{self.name}] {describe(self.mode)} -> {describe(new_mode)} "
-                  f"(bat={self.battery:.1f}%)")
+            say(f"[{self.name}] {describe(self.mode)} -> {describe(new_mode)} "
+                f"(bat={self.battery:.1f}%)")
             self.mode = new_mode
 
         # apply drain/charge
@@ -170,13 +171,13 @@ class SamplerDrone(Drone):
 
     def sample_at(self, x, y):
         if not can_move(self.mode):
-            print(f"[{self.name}] cannot sample: {describe(self.mode)}")
+            say(f"[{self.name}] cannot sample: {describe(self.mode)}")
             return
         self.status = "deployed"
         self.world.move_unit(self.name, x, y)
         self.samples.append((x,y))
         self.bus.send(self.name, "base", "sample", x=x, y=y)
-        print(f"[{self.name}] sampled at ({x},{y})")
+        say(f"[{self.name}] sampled at ({x},{y})")
         self.status = "returning"
 
     def tick(self, dt, bx, by):
@@ -193,16 +194,16 @@ class ColonySeed(Drone):
     def place_auto(self, selector, search_radius=15.0):
         site = selector.best_site(search_radius=search_radius)
         if site is None:
-            print(f"[{self.name}] no viable site found")
+            say(f"[{self.name}] no viable site found")
             return False
         self.chosen_site = site
         self.deploy(site.x, site.y)
         self.world.add_landmark(f"colony-site", site.x, site.y, "colony")
-        print(f"[{self.name}] site score={site.total}  ok={site.ok()}")
+        say(f"[{self.name}] site score={site.total}  ok={site.ok()}")
         for r in site.reasons:
-            print(f"    - {r}")
+            say(f"    - {r}")
         if not site.ok():
-            print(f"[{self.name}] WARNING: chosen site below threshold, risks storm damage")
+            say(f"[{self.name}] WARNING: chosen site below threshold, risks storm damage")
         return True
 
     def tick(self, dt, bx, by):
