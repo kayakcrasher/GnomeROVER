@@ -144,8 +144,19 @@ class ScoutDrone(Drone):
         self._update_power(dt, bx, by)
         if self.status == "deployed" and can_move(self.mode):
             u = self.world.units[self.name]
-            u.x += random.uniform(-0.5, 0.5)
-            u.y += random.uniform(-0.5, 0.5)
+            # science-biased exploration: drift toward unexplored space
+            try:
+                from .science import ScienceEvaluator, explorer_gradient
+                ev = ScienceEvaluator(self.world)
+                gx, gy = explorer_gradient(self.world, ev, u.x, u.y,
+                                           sample_radius=2.0)
+                bias = 0.35
+                u.x += bias * gx + random.uniform(-0.3, 0.3)
+                u.y += bias * gy + random.uniform(-0.3, 0.3)
+            except Exception:
+                # fallback to pure random
+                u.x += random.uniform(-0.5, 0.5)
+                u.y += random.uniform(-0.5, 0.5)
             if random.random() < 0.05:
                 k = random.choice(["rock","crevice","flat","ice-signature"])
                 # dedupe: skip if a same-kind landmark is within 2m

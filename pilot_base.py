@@ -319,3 +319,11 @@ def cmd_fault(base, args):
     target = args[1]
     dur = float(args[2]) if len(args) > 2 else -1.0
     base.faults.inject(target, sub, duration_s=dur)
+
+
+def cmd_science(base, args):
+    """science [top N]  -- rank landmarks by science value."""
+    from gnome_rover.science import ScienceEvaluator
+    ev = ScienceEvaluator(base.world, base.roads)
+    n = int(args[0]) if args and args[0].isdigit() else 10
+    ev.report(top=n)
