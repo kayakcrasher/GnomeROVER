@@ -143,6 +143,10 @@ def main():
             elif cmd == "samples":  pilot_base.cmd_samples(base, args)
             elif cmd == "collect":  pilot_base.cmd_collect(base, args)
             elif cmd == "cache":    pilot_base.cmd_cache(base, args)
+            elif cmd == "isru":      pilot_base.cmd_isru(base, args)
+            elif cmd == "spawn":     pilot_base.cmd_spawn(base, args)
+            elif cmd == "attach-isru": pilot_base.cmd_attach_isru(base, args)
+            elif cmd == "isru-fill": pilot_base.cmd_isru_fill(base, args)
             else:
                 print(f"unknown command: {cmd}  (try 'help')")
     except KeyboardInterrupt:

@@ -460,3 +460,44 @@ def cmd_cache(base, args):
         return
     base.samples.transfer(sid, dname, d.x, d.y, SampleState.CACHED,
                           note=f"cached at {dname}")
+
+
+def cmd_isru(base, args):
+    """isru  -- show ISRU state for all colonies."""
+    base.isru.report()
+
+
+def cmd_spawn(base, args):
+    """spawn <colony_name>  -- force a colony to spawn a child."""
+    if not args:
+        print("usage: spawn <colony_name>")
+        return
+    base.isru.spawn_child(args[0])
+
+
+def cmd_attach_isru(base, args):
+    """attach-isru <colony_name>  -- register a colony with the ISRU engine."""
+    if not args:
+        print("usage: attach-isru <colony_name>")
+        return
+    base.isru.attach(args[0])
+    print(f"[ISRU] attached {args[0]}")
+
+
+def cmd_isru_fill(base, args):
+    """isru-fill <colony_name>  -- cheat: fill O2/H2 tanks for testing spawn."""
+    if not args:
+        print("usage: isru-fill <colony_name>")
+        return
+    st = base.isru.states.get(args[0])
+    if not st:
+        print(f"no state for {args[0]} (use attach-isru)")
+        return
+    st.o2_kg = 80.0
+    st.h2_kg = 10.0
+    st.power_net_kwh = 5.0
+    # force stage to factory
+    colony = base.drones.get(args[0])
+    if colony:
+        colony.stage = 5
+    print(f"[ISRU] {args[0]} loaded: O2=80kg H2=10kg stage=FACTORY")

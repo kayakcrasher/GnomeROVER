@@ -9,6 +9,7 @@ from .faults import FaultInjector
 from .solops import SolOps
 from .weather_model import MarsEnvironment
 from .samples import SampleArchive, extend_sampler, extend_hauler, try_collect
+from .isru import ISRUEngine
 
 
 class BaseStation:
@@ -24,6 +25,7 @@ class BaseStation:
         self.solops = SolOps(self)
         self.env = MarsEnvironment(self)
         self.samples = SampleArchive(self)
+        self.isru = ISRUEngine(self)
         self._storm_mode = False
         self._comms_jammed = False
         self.faults = FaultInjector(self)
@@ -72,6 +74,15 @@ class BaseStation:
         self.solops.check_milestones()
         self.solops.tick()
         self.env.tick()
+        # ISRU advance: approximate dt in sols from real time
+        import time as _t
+        now = _t.time()
+        if not hasattr(self, '_last_isru_t'):
+            self._last_isru_t = now
+        dt_real = now - self._last_isru_t
+        self._last_isru_t = now
+        dt_sol = (dt_real * self.comms.clock.scale) / 88775.244
+        self.isru.tick(dt_sol)
         if not self._comms_jammed:
             self.comms.tick()
         for p in self.bus.poll("base"):
