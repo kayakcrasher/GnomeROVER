@@ -48,6 +48,10 @@ class SupplyLine:
         target = (lm.x, lm.y)
         anchor = self._nearest_connected(lm.x, lm.y)
         dist = self._dist(anchor, target)
+        if dist < 3.0:
+            # too close to justify a road; just mark connected
+            self.connected.append(target)
+            return False
 
         name = self._road_name(landmark_name)
         self.roads.new(name)

@@ -148,10 +148,19 @@ class ScoutDrone(Drone):
             u.y += random.uniform(-0.5, 0.5)
             if random.random() < 0.05:
                 k = random.choice(["rock","crevice","flat","ice-signature"])
-                self.findings.append((round(u.x,1), round(u.y,1), k))
-                self.world.add_landmark(f"{k}-{len(self.findings)}", u.x, u.y, k)
-                self.bus.send(self.name, "base", "finding", what=k,
-                              x=round(u.x,1), y=round(u.y,1))
+                # dedupe: skip if a same-kind landmark is within 2m
+                too_close = False
+                for lm in self.world.landmarks.values():
+                    if lm.kind != k:
+                        continue
+                    if math.hypot(lm.x - u.x, lm.y - u.y) < 2.0:
+                        too_close = True
+                        break
+                if not too_close:
+                    self.findings.append((round(u.x,1), round(u.y,1), k))
+                    self.world.add_landmark(f"{k}-{len(self.findings)}", u.x, u.y, k)
+                    self.bus.send(self.name, "base", "finding", what=k,
+                                  x=round(u.x,1), y=round(u.y,1))
         elif self.status == "returning":
             Drone.tick(self, dt, bx, by)
 
