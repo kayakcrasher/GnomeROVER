@@ -327,3 +327,12 @@ def cmd_science(base, args):
     ev = ScienceEvaluator(base.world, base.roads)
     n = int(args[0]) if args and args[0].isdigit() else 10
     ev.report(top=n)
+
+
+def cmd_dash(base, args):
+    """dash -- launch curses dashboard (blocks until you press q)."""
+    from gnome_rover.dashboard import run
+    print("[DASH] launching... press q to exit")
+    import time as _t
+    _t.sleep(0.5)
+    run(base)
