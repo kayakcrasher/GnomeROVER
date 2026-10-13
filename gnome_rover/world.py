@@ -1,6 +1,7 @@
 """Shared spatial map: landmarks, units, positions."""
 from dataclasses import dataclass, field
 from typing import Dict, Tuple
+from .mars_coords import LocalFrame
 
 
 @dataclass
@@ -23,9 +24,21 @@ class Unit:
 
 
 class World:
-    def __init__(self):
+    def __init__(self, lat0: float = 18.4447, lon0: float = 77.4508, name: str = "Jezero"):
         self.landmarks: Dict[str, Landmark] = {}
         self.units: Dict[str, Unit] = {}
+        # Reference frame: default is Jezero crater (Perseverance landing)
+        self.frame = LocalFrame(lat0, lon0, name=name)
+
+    def to_areocentric(self, x, y, z=0.0):
+        return self.frame.to_areocentric(x, y, z)
+
+    def to_local(self, lat, lon, h=0.0):
+        return self.frame.to_local(lat, lon, h)
+
+    def surface_distance(self, x1, y1, x2, y2):
+        """Real Mars surface distance in meters."""
+        return self.frame.distance(x1, y1, x2, y2)
 
     def add_landmark(self, name, x, y, kind="generic"):
         self.landmarks[name] = Landmark(name, x, y, kind)

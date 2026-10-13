@@ -1,4 +1,15 @@
 """Roads and routing over the world map."""
+from dataclasses import dataclass as _dc
+
+@_dc
+class Waypoint:
+    x: float
+    y: float
+    lat: float = 0.0
+    lon: float = 0.0
+    h: float = 0.0
+    def xy(self):
+        return (self.x, self.y)
 import heapq
 import math
 from dataclasses import dataclass, field
@@ -19,8 +30,16 @@ class Road:
 
 
 class RoadNetwork:
-    def __init__(self):
+    def __init__(self, world=None):
         self.roads: Dict[str, Road] = {}
+        self.world = world   # optional — for areocentric tagging
+
+    def _tag(self, x, y):
+        """Return lat/lon/h for a local point if a world frame is present."""
+        if not self.world:
+            return (0.0, 0.0, 0.0)
+        lat, lon, h = self.world.to_areocentric(x, y)
+        return (lat, lon, h)
 
     # --- define ---
     def new(self, name: str):
@@ -43,7 +62,14 @@ class RoadNetwork:
             return
         print(f"Road '{name}' ({len(r.waypoints)} waypoints, {r.length():.1f}m):")
         for i, (x, y) in enumerate(r.waypoints):
-            print(f"  [{i}] ({x:>7.1f}, {y:>7.1f})")
+            if self.world:
+                lat, lon, h = self.world.to_areocentric(x, y)
+                ns = "N" if lat >= 0 else "S"
+                ew = "E" if lon >= 0 else "W"
+                print(f"  [{i}] ({x:>7.1f}, {y:>7.1f})  ->  "
+                      f"{abs(lat):.5f}°{ns} {abs(lon):.5f}°{ew}")
+            else:
+                print(f"  [{i}] ({x:>7.1f}, {y:>7.1f})")
 
     def list_all(self):
         if not self.roads:

@@ -11,7 +11,7 @@ class BaseStation:
         self.rover = rover
         self.bus = Bus()
         self.world = World()
-        self.roads = RoadNetwork()
+        self.roads = RoadNetwork(world=self.world)
         self.infra = InfraManager()
         self.world.add_unit("rover", role="base")
         self.drones = {}
