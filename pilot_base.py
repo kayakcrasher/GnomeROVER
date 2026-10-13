@@ -226,3 +226,14 @@ def cmd_queue(base, args):
     b = make_bundle("base", "dsn", kind, what=kind, size_kb=size)
     base.comms.uplink.enqueue(b, size_kb=size, priority=prio)
     print(f"[QUEUE] {size} KB {kind} prio={prio}  ({len(base.comms.uplink.items)} total)")
+
+
+def cmd_diag(base, args):
+    """diag [full|<subsystem>]"""
+    from gnome_rover.diagnostics import run_all, run_subsystem
+    if not args:
+        run_all(base.rover, base, show_ok=True)
+    elif args[0] == "full":
+        run_all(base.rover, base, show_ok=True)
+    else:
+        run_subsystem(base.rover, base, args[0])

@@ -127,6 +127,7 @@ def main():
             elif cmd == "uplink-q": pilot_base.cmd_uplink_queue(base, args)
             elif cmd == "comms":    pilot_base.cmd_comms(base, args)
             elif cmd == "queue":    pilot_base.cmd_queue(base, args)
+            elif cmd == "diag":     pilot_base.cmd_diag(base, args)
             else:
                 print(f"unknown command: {cmd}  (try 'help')")
     except KeyboardInterrupt:
