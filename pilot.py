@@ -121,6 +121,7 @@ def main():
             elif cmd == "release":
                 arm = rover.get_module("Arm")
                 arm.release() if arm else print("no arm plugged in")
+            elif cmd == "supply":   pilot_base.cmd_supply(base, args)
             else:
                 print(f"unknown command: {cmd}  (try 'help')")
     except KeyboardInterrupt:

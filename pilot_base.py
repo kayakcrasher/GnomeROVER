@@ -172,3 +172,21 @@ def cmd_quiet(base, args):
     on = args[0].lower() in ("on", "true", "1", "yes")
     set_quiet(on)
     print(f"quiet -> {'ON' if on else 'OFF'}")
+
+
+def cmd_supply(base, args):
+    """supply [report|build|trace <x> <y>]"""
+    from gnome_rover.supply import SupplyLine, trace_line
+    sl = getattr(base, "_supply", None)
+    if sl is None:
+        sl = SupplyLine(base.world, base.roads, home_xy=(0, 0))
+        base._supply = sl
+    if not args or args[0] == "report":
+        sl.report()
+    elif args[0] == "build":
+        n = sl.build_all()
+        print(f"[SUPPLY] built {n} new road(s)")
+    elif args[0] == "trace" and len(args) >= 3:
+        trace_line(base.world, base.roads, float(args[1]), float(args[2]))
+    else:
+        print("usage: supply [report|build|trace <x> <y>]")
