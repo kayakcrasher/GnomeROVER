@@ -1,0 +1,65 @@
+# GnomeROVER mission config
+# Generated defaults — edit freely, restart to apply
+
+
+# --- clock ---
+clock.landing_lat: 18.4447
+clock.landing_lon: 77.4508
+clock.landing_name: Jezero
+clock.time_scale: 60.0
+
+# --- comms ---
+comms.earth_base_delay_s: 600.0
+comms.earth_delay_swing_s: 300.0
+comms.uplink_bandwidth_kbps: 250.0
+
+# --- isru ---
+isru.drill_rate_kg_per_sol: 0.5
+isru.extraction_efficiency: 0.6
+isru.spawn_cooldown_sols: 8
+isru.spawn_h2_required_kg: 6.0
+isru.spawn_max_distance_m: 25.0
+isru.spawn_min_distance_m: 6.0
+isru.spawn_o2_required_kg: 50.0
+
+# --- mesh ---
+mesh.default_range_m: 30.0
+mesh.missing_threshold_s: 15.0
+mesh.repeater_range_m: 50.0
+
+# --- persist ---
+persist.autosave_interval_s: 300.0
+persist.save_path: ~/GnomeROVER/mission_save.json
+
+# --- plugins ---
+plugins.dir: ~/GnomeROVER/plugins
+
+# --- power ---
+power.charge_exit: 90.0
+power.charge_hysteresis: 85.0
+power.charge_rate: 0.15
+power.critical_threshold: 10.0
+power.drain_conserve: 0.02
+power.drain_normal: 0.1
+power.low_threshold: 25.0
+
+# --- sites ---
+sites.max_base_dist: 40.0
+sites.max_rock_dist: 4.0
+sites.min_crevice_dist: 6.0
+sites.min_ice_dist: 8.0
+sites.ok_threshold: 0.6
+
+# --- terrain ---
+terrain.roughness: 0.6
+terrain.scenario: jezero
+terrain.seed: 42
+
+# --- wave1 ---
+wave1.min_findings: 6
+wave1.survey_min_battery: 40
+wave1.survey_timeout_s: 120
+
+# --- weather ---
+weather.storm_rate: 0.02
+weather.storm_threshold_tau: 2.5

@@ -147,6 +147,10 @@ def main():
             elif cmd == "spawn":     pilot_base.cmd_spawn(base, args)
             elif cmd == "attach-isru": pilot_base.cmd_attach_isru(base, args)
             elif cmd == "isru-fill": pilot_base.cmd_isru_fill(base, args)
+            elif cmd == "plugins":  pilot_base.cmd_plugins(base, args)
+            elif cmd == "plugp":    pilot_base.cmd_plugp(base, args)
+            elif cmd == "cfg":      pilot_base.cmd_cfg(base, args)
+            elif cmd == "cfg-write": pilot_base.cmd_cfg_write(base, args)
             else:
                 print(f"unknown command: {cmd}  (try 'help')")
     except KeyboardInterrupt:

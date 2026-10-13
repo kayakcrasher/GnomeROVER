@@ -501,3 +501,48 @@ def cmd_isru_fill(base, args):
     if colony:
         colony.stage = 5
     print(f"[ISRU] {args[0]} loaded: O2=80kg H2=10kg stage=FACTORY")
+
+
+def cmd_plugins(base, args):
+    """plugins [scan]  -- list available plugin modules."""
+    from gnome_rover.plugins import PluginLoader, DEFAULT_PLUGIN_DIR
+    if not hasattr(base, "_plugins"):
+        base._plugins = PluginLoader()
+        base._plugins.scan()
+    if args and args[0] == "scan":
+        base._plugins.scan()
+    base._plugins.pretty()
+
+
+def cmd_plugp(base, args):
+    """plugp <ModuleName>  -- plug a plugin module into the rover."""
+    if not args:
+        print("usage: plugp <ModuleName>")
+        return
+    from gnome_rover.plugins import PluginLoader
+    if not hasattr(base, "_plugins"):
+        base._plugins = PluginLoader()
+        base._plugins.scan()
+    m = base._plugins.instantiate(args[0])
+    if not m:
+        print(f"[PLUGINS] no such plugin: {args[0]}")
+        return
+    ok = base.rover.plug_in(m)
+    print(f"[PLUGINS] plugged {args[0]}: {ok}")
+
+
+def cmd_cfg(base, args):
+    """cfg [key]  -- show config values (all or one)."""
+    from gnome_rover.config import get_config
+    c = get_config()
+    if args:
+        print(f"{args[0]} = {c.get(args[0])}")
+        return
+    for k in sorted(c.all().keys()):
+        print(f"  {k:<40} {c.get(k)}")
+
+
+def cmd_cfg_write(base, args):
+    """cfg-write  -- write a full example mission.yaml."""
+    from gnome_rover.config import get_config
+    get_config().write_example()
