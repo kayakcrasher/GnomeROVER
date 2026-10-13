@@ -237,3 +237,20 @@ def cmd_diag(base, args):
         run_all(base.rover, base, show_ok=True)
     else:
         run_subsystem(base.rover, base, args[0])
+
+
+def cmd_wave1(base, args):
+    """wave1 [stop]  -- run (or stop) the full autonomous mission."""
+    from gnome_rover.wave1 import Wave1Mission
+    m = getattr(base, "_wave1", None)
+    if args and args[0].lower() == "stop":
+        if m:
+            m.stop()
+            print("[WAVE1] stopping background operations")
+        return
+    if m and m.operating:
+        print("[WAVE1] already running")
+        return
+    m = Wave1Mission(base)
+    base._wave1 = m
+    m.run(operate_forever=True)
