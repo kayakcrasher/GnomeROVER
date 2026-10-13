@@ -8,6 +8,7 @@ from .dsn import CommsController
 from .faults import FaultInjector
 from .solops import SolOps
 from .weather_model import MarsEnvironment
+from .samples import SampleArchive, extend_sampler, extend_hauler, try_collect
 
 
 class BaseStation:
@@ -22,6 +23,7 @@ class BaseStation:
         self.faults = FaultInjector(self)
         self.solops = SolOps(self)
         self.env = MarsEnvironment(self)
+        self.samples = SampleArchive(self)
         self._storm_mode = False
         self._comms_jammed = False
         self.faults = FaultInjector(self)
@@ -34,6 +36,8 @@ class BaseStation:
         self._add(RelayDrone("Relay-1", self.bus, self.world))
         self._add(SamplerDrone("Sampler-1", self.bus, self.world))
         self._add(ColonySeed("Colony-1", self.bus, self.world))
+        # extend sampler with payload/collection logic
+        extend_sampler(self.drones["Sampler-1"], self.samples)
         self.world.add_landmark("base", 0.0, 0.0, "home")
         self.log("mission start; base established at origin")
 

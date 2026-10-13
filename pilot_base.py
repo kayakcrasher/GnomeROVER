@@ -411,3 +411,52 @@ def cmd_storm(base, args):
         base._storm_mode = False
         base.env.opacity_tau = 0.3
         print("[ENV] storm ended")
+
+
+def cmd_samples(base, args):
+    """samples [<id>]  -- list samples or show custody trail."""
+    if args:
+        s = base.samples.samples.get(args[0])
+        if not s:
+            print(f"no sample {args[0]}")
+            return
+        s.custody_trail()
+        return
+    base.samples.summary()
+
+
+def cmd_collect(base, args):
+    """collect <landmark> [science_value]  -- sampler collects a sample."""
+    from gnome_rover.samples import try_collect
+    if not args:
+        print("usage: collect <landmark> [value]")
+        return
+    lname = args[0]
+    val = float(args[1]) if len(args) > 1 else 0.5
+    sampler = base.drones["Sampler-1"]
+    if sampler.status == "stowed":
+        print("[SAMPLER] deploy the sampler first: deploy sampler <x> <y>")
+        return
+    s = try_collect(base.samples, sampler, lname, val, base)
+    if s:
+        print(f"[COLLECT] {s.id} {s.mass_g:.0f}g  "
+              f"payload now {sampler.payload_mass():.0f}/{sampler.payload_capacity:.0f}g")
+
+
+def cmd_cache(base, args):
+    """cache <sample_id> <depot_name>  -- drop a sample at a depot."""
+    from gnome_rover.samples import SampleState
+    if len(args) != 2:
+        print("usage: cache <sample_id> <depot_name>")
+        return
+    sid, dname = args[0], args[1]
+    d = base.infra.items.get(dname)
+    if not d or d.kind != "depot":
+        print(f"no depot named {dname}")
+        return
+    s = base.samples.samples.get(sid)
+    if not s:
+        print(f"no sample {sid}")
+        return
+    base.samples.transfer(sid, dname, d.x, d.y, SampleState.CACHED,
+                          note=f"cached at {dname}")

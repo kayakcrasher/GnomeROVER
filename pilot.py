@@ -140,6 +140,9 @@ def main():
             elif cmd == "terrain":  pilot_base.cmd_terrain(base, args)
             elif cmd == "env":      pilot_base.cmd_env(base, args)
             elif cmd == "storm":    pilot_base.cmd_storm(base, args)
+            elif cmd == "samples":  pilot_base.cmd_samples(base, args)
+            elif cmd == "collect":  pilot_base.cmd_collect(base, args)
+            elif cmd == "cache":    pilot_base.cmd_cache(base, args)
             else:
                 print(f"unknown command: {cmd}  (try 'help')")
     except KeyboardInterrupt:
