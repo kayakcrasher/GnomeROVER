@@ -135,6 +135,8 @@ def main():
             elif cmd == "fault":    pilot_base.cmd_fault(base, args)
             elif cmd == "science":  pilot_base.cmd_science(base, args)
             elif cmd == "dash":     pilot_base.cmd_dash(base, args)
+            elif cmd == "sol":        pilot_base.cmd_sol(base, args)
+            elif cmd == "solhistory": pilot_base.cmd_sol_history(base, args)
             else:
                 print(f"unknown command: {cmd}  (try 'help')")
     except KeyboardInterrupt:

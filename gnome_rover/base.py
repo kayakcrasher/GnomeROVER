@@ -6,6 +6,7 @@ from .roads import RoadNetwork
 from .infra import InfraManager, HomeBase, WeatherStation, RadioRepeater, Depot
 from .dsn import CommsController
 from .faults import FaultInjector
+from .solops import SolOps
 
 
 class BaseStation:
@@ -18,6 +19,7 @@ class BaseStation:
         self.comms = CommsController()
         self.uplink_log = []
         self.faults = FaultInjector(self)
+        self.solops = SolOps(self)
         self._comms_jammed = False
         self.faults = FaultInjector(self)
         self._comms_jammed = False
@@ -60,6 +62,8 @@ class BaseStation:
             d.tick(dt, rx, ry)
         self.infra.tick(dt)
         self.faults.tick()
+        self.solops.check_milestones()
+        self.solops.tick()
         if not self._comms_jammed:
             self.comms.tick()
         for p in self.bus.poll("base"):

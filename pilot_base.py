@@ -336,3 +336,14 @@ def cmd_dash(base, args):
     import time as _t
     _t.sleep(0.5)
     run(base)
+
+
+def cmd_sol(base, args):
+    """sol -- print current sol report."""
+    base.solops.print_current()
+
+
+def cmd_sol_history(base, args):
+    """solhistory [N] -- list past sol summaries."""
+    n = int(args[0]) if args and args[0].isdigit() else 10
+    base.solops.print_history(n=n)
