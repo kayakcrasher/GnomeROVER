@@ -254,3 +254,41 @@ def cmd_wave1(base, args):
     m = Wave1Mission(base)
     base._wave1 = m
     m.run(operate_forever=True)
+
+
+def cmd_save(base, args):
+    from gnome_rover.persist import save
+    from pathlib import Path
+    path = Path(args[0]) if args else None
+    save(base) if path is None else save(base, path)
+
+
+def cmd_load(base, args):
+    from gnome_rover.persist import load
+    from pathlib import Path
+    path = Path(args[0]) if args else None
+    load(base) if path is None else load(base, path)
+
+
+def cmd_wipe(base, args):
+    """wipe -- clear all world/roads/infra/drones state (fresh mission)."""
+    confirm = args and args[0].lower() in ("yes", "y", "confirm")
+    if not confirm:
+        print("wipe requires confirmation: wipe yes")
+        return
+    from pathlib import Path
+    from gnome_rover.persist import DEFAULT_PATH
+    if DEFAULT_PATH.exists():
+        DEFAULT_PATH.unlink()
+        print(f"[WIPE] deleted {DEFAULT_PATH}")
+    base.world.landmarks.clear()
+    base.world.units.clear()
+    base.world.add_unit("rover", role="base")
+    base.roads.roads.clear()
+    base.infra.items.clear()
+    base.mission_log.clear()
+    for d in base.drones.values():
+        d.status = "stowed"
+        d.battery = 100.0
+        d.route = []
+    print("[WIPE] state cleared")

@@ -129,6 +129,9 @@ def main():
             elif cmd == "queue":    pilot_base.cmd_queue(base, args)
             elif cmd == "diag":     pilot_base.cmd_diag(base, args)
             elif cmd == "wave1":    pilot_base.cmd_wave1(base, args)
+            elif cmd == "save":     pilot_base.cmd_save(base, args)
+            elif cmd == "load":     pilot_base.cmd_load(base, args)
+            elif cmd == "wipe":     pilot_base.cmd_wipe(base, args)
             else:
                 print(f"unknown command: {cmd}  (try 'help')")
     except KeyboardInterrupt:
