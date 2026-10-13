@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Any
 from .quiet import say
+from .bpv7 import make_bundle
 
 
 class Priority(Enum):
@@ -46,6 +47,14 @@ class Packet:
     def short(self) -> str:
         return (f"{self.src}->{self.dst} [{self.kind}] "
                 f"seq={self.seq} hops={self.hops}")
+
+    def as_bundle(self, lifetime_s: int = 3600):
+        """Wrap this packet as a BPv7 bundle for interplanetary relay."""
+        return make_bundle(
+            src_node=self.src, dst_node=self.dst, kind=self.kind,
+            lifetime_s=lifetime_s, priority=self.priority,
+            **self.payload,
+        )
 
 
 class MeshNode:
