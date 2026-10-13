@@ -190,3 +190,39 @@ def cmd_supply(base, args):
         trace_line(base.world, base.roads, float(args[1]), float(args[2]))
     else:
         print("usage: supply [report|build|trace <x> <y>]")
+
+
+def cmd_time(base, args):
+    from gnome_rover.soltime import describe
+    h, m, s = base.comms.clock.hms()
+    print(f"[MARS TIME] Sol {base.comms.clock.sol()}  "
+          f"{h:02d}:{m:02d}:{s:02d} MST")
+
+
+def cmd_pass(base, args):
+    print("[ORBITER PASSES]")
+    for orb in base.comms.orbiters:
+        status = "OVERHEAD" if orb.is_overhead(base.comms.clock) else orb.next_pass_in_hms(base.comms.clock)
+        print(f"  {orb.name:<10} {status}")
+    print(f"  Earth: {base.comms.earth.describe()}")
+
+
+def cmd_uplink_queue(base, args):
+    base.comms.uplink.pretty()
+
+
+def cmd_comms(base, args):
+    base.comms.status()
+
+
+def cmd_queue(base, args):
+    """queue <size_kb> <kind> [priority]  -- enqueue a test bundle"""
+    from gnome_rover.bpv7 import make_bundle
+    if len(args) < 2:
+        print("usage: queue <size_kb> <kind> [prio]")
+        return
+    size = float(args[0]); kind = args[1]
+    prio = int(args[2]) if len(args) > 2 else 0
+    b = make_bundle("base", "dsn", kind, what=kind, size_kb=size)
+    base.comms.uplink.enqueue(b, size_kb=size, priority=prio)
+    print(f"[QUEUE] {size} KB {kind} prio={prio}  ({len(base.comms.uplink.items)} total)")

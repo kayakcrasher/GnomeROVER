@@ -122,6 +122,11 @@ def main():
                 arm = rover.get_module("Arm")
                 arm.release() if arm else print("no arm plugged in")
             elif cmd == "supply":   pilot_base.cmd_supply(base, args)
+            elif cmd == "time":     pilot_base.cmd_time(base, args)
+            elif cmd == "pass":     pilot_base.cmd_pass(base, args)
+            elif cmd == "uplink-q": pilot_base.cmd_uplink_queue(base, args)
+            elif cmd == "comms":    pilot_base.cmd_comms(base, args)
+            elif cmd == "queue":    pilot_base.cmd_queue(base, args)
             else:
                 print(f"unknown command: {cmd}  (try 'help')")
     except KeyboardInterrupt:

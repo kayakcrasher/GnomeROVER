@@ -4,6 +4,7 @@ from .world import World
 from .drones import ScoutDrone, RelayDrone, SamplerDrone, ColonySeed
 from .roads import RoadNetwork
 from .infra import InfraManager, HomeBase, WeatherStation, RadioRepeater, Depot
+from .dsn import CommsController
 
 
 class BaseStation:
@@ -13,6 +14,8 @@ class BaseStation:
         self.world = World()
         self.roads = RoadNetwork(world=self.world)
         self.infra = InfraManager()
+        self.comms = CommsController()
+        self.uplink_log = []
         self.world.add_unit("rover", role="base")
         self.drones = {}
         self.uplink_queue = []
@@ -51,6 +54,7 @@ class BaseStation:
         for d in self.drones.values():
             d.tick(dt, rx, ry)
         self.infra.tick(dt)
+        self.comms.tick()
         for p in self.bus.poll("base"):
             self.mission_log.append(f"  << {p.src} -> {p.kind} {p.payload}")
 
@@ -62,6 +66,8 @@ class BaseStation:
             print(f"  {d.report()}")
         print("=== INFRA ===")
         self.infra.pretty()
+        print()
+        self.comms.status()
 
     def ping(self):
         print("[PING] radio check:")
