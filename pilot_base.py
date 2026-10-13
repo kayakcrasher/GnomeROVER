@@ -378,3 +378,36 @@ def cmd_terrain(base, args):
         print(f"[TERRAIN] switched to '{args[1]}'")
     else:
         print("usage: terrain [map|stats|slope <x> <y>|scenario <name>]")
+
+
+def cmd_env(base, args):
+    """env [storm]  -- show environment, or force a storm."""
+    if args and args[0] == "storm":
+        base.env.storm_until_sol = base.comms.clock.sol() + 5
+        base._storm_mode = True
+        print("[ENV] forced storm for 5 sols")
+        return
+    base.env.report()
+    # small history
+    print("  recent samples:")
+    for s in base.env.log[-8:]:
+        tag = "STORM" if s.storm else "     "
+        print(f"    Sol {s.sol:>3} ph={s.sol_phase:.2f} "
+              f"T={s.temp_c:>6.1f}C sol={s.solar_flux:.3f} "
+              f"tau={s.opacity_tau:.2f} wind={s.wind_ms:>4.1f} {tag}")
+
+
+def cmd_storm(base, args):
+    """storm [start|end] -- manual storm control."""
+    if not args:
+        print(f"storm_mode: {base._storm_mode}")
+        return
+    if args[0] == "start":
+        base.env.storm_until_sol = base.comms.clock.sol() + 5
+        base._storm_mode = True
+        print("[ENV] storm manually started (5 sols)")
+    elif args[0] == "end":
+        base.env.storm_until_sol = -1
+        base._storm_mode = False
+        base.env.opacity_tau = 0.3
+        print("[ENV] storm ended")
