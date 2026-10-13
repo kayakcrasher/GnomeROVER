@@ -137,6 +137,7 @@ def main():
             elif cmd == "dash":     pilot_base.cmd_dash(base, args)
             elif cmd == "sol":        pilot_base.cmd_sol(base, args)
             elif cmd == "solhistory": pilot_base.cmd_sol_history(base, args)
+            elif cmd == "terrain":  pilot_base.cmd_terrain(base, args)
             else:
                 print(f"unknown command: {cmd}  (try 'help')")
     except KeyboardInterrupt:

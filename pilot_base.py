@@ -347,3 +347,34 @@ def cmd_sol_history(base, args):
     """solhistory [N] -- list past sol summaries."""
     n = int(args[0]) if args and args[0].isdigit() else 10
     base.solops.print_history(n=n)
+
+
+def cmd_terrain(base, args):
+    """terrain [stats|map|slope <x> <y>|scenario <name>]"""
+    from gnome_rover.terrain import terrain_for
+    t = getattr(base, "_terrain", None)
+    if t is None:
+        t = terrain_for("jezero")
+        base._terrain = t
+    if not args:
+        s = t.stats()
+        print(f"[TERRAIN] jezero")
+        for k, v in s.items():
+            print(f"  {k:<12} {v}")
+        print(t.ascii_map())
+    elif args[0] == "map":
+        print(t.ascii_map())
+    elif args[0] == "stats":
+        s = t.stats()
+        for k, v in s.items():
+            print(f"  {k:<12} {v}")
+    elif args[0] == "slope" and len(args) >= 3:
+        x, y = float(args[1]), float(args[2])
+        print(f"  ({x},{y}): z={t.elevation(x,y):.2f}m  "
+              f"slope={t.slope_at(x,y):.2f}deg  "
+              f"landable={t.is_landable(x,y)}")
+    elif args[0] == "scenario" and len(args) >= 2:
+        base._terrain = terrain_for(args[1])
+        print(f"[TERRAIN] switched to '{args[1]}'")
+    else:
+        print("usage: terrain [map|stats|slope <x> <y>|scenario <name>]")
