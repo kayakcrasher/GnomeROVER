@@ -132,6 +132,7 @@ def main():
             elif cmd == "save":     pilot_base.cmd_save(base, args)
             elif cmd == "load":     pilot_base.cmd_load(base, args)
             elif cmd == "wipe":     pilot_base.cmd_wipe(base, args)
+            elif cmd == "fault":    pilot_base.cmd_fault(base, args)
             else:
                 print(f"unknown command: {cmd}  (try 'help')")
     except KeyboardInterrupt:

@@ -292,3 +292,30 @@ def cmd_wipe(base, args):
         d.battery = 100.0
         d.route = []
     print("[WIPE] state cleared")
+
+
+def cmd_fault(base, args):
+    """fault <kind> <target> [duration_s]  |  fault clear [target]  |  fault list"""
+    from gnome_rover.faults import FAULT_TYPES
+    if not args:
+        print("usage: fault <kind> <target> [secs] | fault clear [target] | fault list")
+        print("kinds:", ", ".join(FAULT_TYPES))
+        return
+    sub = args[0].lower()
+    if sub == "list":
+        base.faults.list_active()
+        return
+    if sub == "clear":
+        target = args[1] if len(args) > 1 else None
+        base.faults.clear(target)
+        return
+    if sub not in FAULT_TYPES:
+        print(f"unknown fault kind: {sub}")
+        print("valid:", ", ".join(FAULT_TYPES))
+        return
+    if len(args) < 2:
+        print("usage: fault <kind> <target> [secs]")
+        return
+    target = args[1]
+    dur = float(args[2]) if len(args) > 2 else -1.0
+    base.faults.inject(target, sub, duration_s=dur)

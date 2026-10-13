@@ -5,6 +5,7 @@ from .drones import ScoutDrone, RelayDrone, SamplerDrone, ColonySeed
 from .roads import RoadNetwork
 from .infra import InfraManager, HomeBase, WeatherStation, RadioRepeater, Depot
 from .dsn import CommsController
+from .faults import FaultInjector
 
 
 class BaseStation:
@@ -16,6 +17,10 @@ class BaseStation:
         self.infra = InfraManager()
         self.comms = CommsController()
         self.uplink_log = []
+        self.faults = FaultInjector(self)
+        self._comms_jammed = False
+        self.faults = FaultInjector(self)
+        self._comms_jammed = False
         self.world.add_unit("rover", role="base")
         self.drones = {}
         self.uplink_queue = []
@@ -54,7 +59,9 @@ class BaseStation:
         for d in self.drones.values():
             d.tick(dt, rx, ry)
         self.infra.tick(dt)
-        self.comms.tick()
+        self.faults.tick()
+        if not self._comms_jammed:
+            self.comms.tick()
         for p in self.bus.poll("base"):
             self.mission_log.append(f"  << {p.src} -> {p.kind} {p.payload}")
 
